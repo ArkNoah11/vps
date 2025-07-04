@@ -11,10 +11,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run VPS
         run: curl -sSf https://sshx.io/get | sh -s run
+
+      # Add backup steps here
+      - name: Create backup folder
+        run: mkdir -p backup
+
+      - name: Save installed packages
+        run: |
+          dpkg --get-selections > backup/installed-packages.list
+          apt list --upgradable > backup/upgradable-packages.txt
+
+      - name: Archive important directories
+        run: |
+          tar -czf backup/etc.tar.gz /etc || true
+          tar -czf backup/www.tar.gz /var/www || true
+
+      - name: Upload backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: vps-backup
+          path: backup/
